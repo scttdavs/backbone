@@ -1298,7 +1298,7 @@
         this.el = el;
       } else {
         // el is string, so find DOM element
-        this.el = document.querySelectorAll(el);
+        this.el = document.querySelectorAll(el)[0];
       }
     },
 
@@ -1315,6 +1315,7 @@
     // pairs. Callbacks will be bound to the view, with `this` set properly.
     // Uses event delegation for efficiency.
     // Omitting the selector binds the event to `this.el`.
+    // TODO: this may need work
     delegateEvents: function(events) {
       events || (events = _.result(this, 'events'));
       if (!events) return this;
@@ -1329,6 +1330,19 @@
       return this;
     },
 
+    getEventTarget: function(e) {
+      e = e || window.event;
+      return e.target || e.srcElement;
+    },
+
+    eventHandler: function(e) {
+      // get target
+      var clicked = _this.getEventTarget(e);
+      if (clicked.matches(selector)) {
+        listener(e);
+      }
+    },
+
     // Add a single event listener to the view's element (or a child element
     // using `selector`). This only works for delegate-able events: not `focus`,
     // `blur`, and not `change`, `submit`, and `reset` in Internet Explorer.
@@ -1337,6 +1351,8 @@
         this.$el.on(eventName + '.delegateEvents' + this.cid, selector, listener);
         return this;
       } else {
+        var _this = this;
+        this.el.addEventListener(eventName + '.delegateEvents' + this.cid, this.eventHandler);
         // TODO: implement javascript version: el.addEventListener(eventName, eventHandler);
         return this;
       }
@@ -1350,7 +1366,9 @@
         if (this.$el) this.$el.off('.delegateEvents' + this.cid);
         return this;
       } else {
-        // TODO: implement javascript version: el.removeEventListener(eventName, eventHandler);
+        if (this.el) {
+          this.el.removeEventListener('.delegateEvents' + this.cid, this.eventHandler);
+        }
         return this;
       }
     },
@@ -1362,7 +1380,10 @@
         this.$el.off(eventName + '.delegateEvents' + this.cid, selector, listener);
         return this;
       } else {
-        // TODO: implement javascript version: el.removeEventListener(eventName, eventHandler);
+        // TODO: maybe store selectors somewhere and remove from that list here?
+        if (this.el) {
+          this.el.removeEventListener('.delegateEvents' + this.cid, this.eventHandler);
+        }
         return this;
       }
     },
