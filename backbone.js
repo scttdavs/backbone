@@ -51,6 +51,18 @@
   if ($) {
     Backbone.$ = $;
   }
+
+  Backbone.warn = function(message) {
+    if (console) {
+      if (console.warn) {
+        console.warn(message);
+      } else {
+        console.log(message);
+      }
+    } else {
+      throw new Error(message);
+    }
+  }
   
   // Runs Backbone.js in *noConflict* mode, returning the `Backbone` variable
   // to its previous owner. Returns a reference to this Backbone object.
@@ -1228,7 +1240,7 @@
       if (Backbone.$) {
         return this.$el.find(selector);
       } else {
-        // TODO: add no jquery warning here
+        Backbone.warn("You do not have jQuery installed. Please use this.qs instead.")
         return this.qs(selector);
       }
     },
@@ -1259,7 +1271,6 @@
       if (Backbone.$) {
         this.$el.remove();
       } else {
-        // TODO: add no jquery warning
         this.el.parentNode.removeChild(this.el);
       }
     },
@@ -1481,8 +1492,12 @@
   // Set the default implementation of `Backbone.ajax` to proxy through to `$`.
   // Override this if you'd like to use a different library.
   Backbone.ajax = function() {
-    // TODO: replace this with javascript
-    return Backbone.$.ajax.apply(Backbone.$, arguments);
+    if (Backbone.$) {
+      return Backbone.$.ajax.apply(Backbone.$, arguments);
+    } else {
+      // TODO: replace this with javascript
+      return Backbone.$.ajax.apply(Backbone.$, arguments);
+    }
   };
 
   // Backbone.Router
