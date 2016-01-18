@@ -47,9 +47,11 @@
   Backbone.VERSION = '1.2.3';
 
   // For Backbone's purposes, jQuery, Zepto, Ender, or My Library (kidding) owns
-  // the `$` variable.
-  Backbone.$ = $;
-
+  // the `$` variable if they exist
+  if ($) {
+    Backbone.$ = $;
+  }
+  
   // Runs Backbone.js in *noConflict* mode, returning the `Backbone` variable
   // to its previous owner. Returns a reference to this Backbone object.
   Backbone.noConflict = function() {
@@ -1223,7 +1225,7 @@
 
     // Former jQuery function, left in for partial backwards compatibility
     $: function(selector) {
-      if ($) {
+      if (Backbone.$) {
         return this.$el.find(selector);
       } else {
         // TODO: add no jquery warning here
@@ -1254,7 +1256,7 @@
     // attached to it. Exposed for subclasses using an alternative DOM
     // manipulation API.
     _removeElement: function() {
-      if ($) {
+      if (Backbone.$) {
         this.$el.remove();
       } else {
         // TODO: add no jquery warning
@@ -1281,8 +1283,10 @@
         this.$el = el instanceof Backbone.$ ? el : Backbone.$(el);
         this.el = this.$el[0];
       } else if (el.nodeName) {
+        // DOM node or element
         this.el = el;
       } else {
+        // el is string, so find DOM element
         this.el = document.querySelectorAll(el);
       }
     },
@@ -1318,23 +1322,38 @@
     // using `selector`). This only works for delegate-able events: not `focus`,
     // `blur`, and not `change`, `submit`, and `reset` in Internet Explorer.
     delegate: function(eventName, selector, listener) {
-      this.$el.on(eventName + '.delegateEvents' + this.cid, selector, listener);
-      return this;
+      if (Backbone.$) {
+        this.$el.on(eventName + '.delegateEvents' + this.cid, selector, listener);
+        return this;
+      } else {
+        // TODO: implement javascript version: el.addEventListener(eventName, eventHandler);
+        return this;
+      }
     },
 
     // Clears all callbacks previously bound to the view by `delegateEvents`.
     // You usually don't need to use this, but may wish to if you have multiple
     // Backbone views attached to the same DOM element.
     undelegateEvents: function() {
-      if (this.$el) this.$el.off('.delegateEvents' + this.cid);
-      return this;
+      if (Backbone.$) {
+        if (this.$el) this.$el.off('.delegateEvents' + this.cid);
+        return this;
+      } else {
+        // TODO: implement javascript version: el.removeEventListener(eventName, eventHandler);
+        return this;
+      }
     },
 
     // A finer-grained `undelegateEvents` for removing a single delegated event.
     // `selector` and `listener` are both optional.
     undelegate: function(eventName, selector, listener) {
-      this.$el.off(eventName + '.delegateEvents' + this.cid, selector, listener);
-      return this;
+      if (Backbone.$) {
+        this.$el.off(eventName + '.delegateEvents' + this.cid, selector, listener);
+        return this;
+      } else {
+        // TODO: implement javascript version: el.removeEventListener(eventName, eventHandler);
+        return this;
+      }
     },
 
     // Produces a DOM element to be assigned to your view. Exposed for
@@ -1347,6 +1366,7 @@
     // If `this.el` is a string, pass it through `$()`, take the first
     // matching element, and re-assign it to `el`. Otherwise, create
     // an element from the `id`, `className` and `tagName` properties.
+    // TODO: this may need reworking
     _ensureElement: function() {
       if (!this.el) {
         var attrs = _.extend({}, _.result(this, 'attributes'));
@@ -1435,6 +1455,7 @@
     }
 
     // Pass along `textStatus` and `errorThrown` from jQuery.
+    // TODO: also may need work
     var error = options.error;
     options.error = function(xhr, textStatus, errorThrown) {
       options.textStatus = textStatus;
