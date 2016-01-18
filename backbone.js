@@ -1215,10 +1215,20 @@
     // The default `tagName` of a View's element is `"div"`.
     tagName: 'div',
 
-    // jQuery delegate for element lookup, scoped to DOM elements within the
-    // current view. This should be preferred to global lookups where possible.
+    // query select all DOM elements within the current view. This should be 
+    // preferred to global lookups where possible.
+    qs: function(selector) {
+      this.el.querySelectorAll(selector);
+    },
+
+    // Former jQuery function, left in for partial backwards compatibility
     $: function(selector) {
-      return this.$el.find(selector);
+      if ($) {
+        return this.$el.find(selector);
+      } else {
+        // TODO: add no jquery warning here
+        return this.qs(selector);
+      }
     },
 
     // Initialize is an empty function by default. Override it with your own
@@ -1244,7 +1254,12 @@
     // attached to it. Exposed for subclasses using an alternative DOM
     // manipulation API.
     _removeElement: function() {
-      this.$el.remove();
+      if ($) {
+        this.$el.remove();
+      } else {
+        // TODO: add no jquery warning
+        this.el.parentNode.removeChild(this.el);
+      }
     },
 
     // Change the view's element (`this.el` property) and re-delegate the
@@ -1262,8 +1277,14 @@
     // alternative DOM manipulation API and are only required to set the
     // `this.el` property.
     _setElement: function(el) {
-      this.$el = el instanceof Backbone.$ ? el : Backbone.$(el);
-      this.el = this.$el[0];
+      if (Backbone.$) {
+        this.$el = el instanceof Backbone.$ ? el : Backbone.$(el);
+        this.el = this.$el[0];
+      } else if (el.nodeName) {
+        this.el = el;
+      } else {
+        this.el = document.querySelectorAll(el);
+      }
     },
 
     // Set callbacks, where `this.events` is a hash of
@@ -1341,7 +1362,10 @@
     // Set attributes from a hash on this view's element.  Exposed for
     // subclasses using an alternative DOM manipulation API.
     _setAttributes: function(attributes) {
-      this.$el.attr(attributes);
+      var keys = Object.getOwnPropertyNames(attributes);
+      for(var i; i <= keys.length; i++) {
+        this.el.setAttribute(key[i], attributes[key[i]]);
+      }
     }
 
   });
@@ -1436,6 +1460,7 @@
   // Set the default implementation of `Backbone.ajax` to proxy through to `$`.
   // Override this if you'd like to use a different library.
   Backbone.ajax = function() {
+    // TODO: replace this with javascript
     return Backbone.$.ajax.apply(Backbone.$, arguments);
   };
 
